@@ -1,0 +1,25 @@
+components:
+  - type: textarea
+    id: inputText
+    label: Input Text
+    placeholder: Enter text to transform
+    required: true
+
+  - type: select
+    id: transformationType
+    label: Transformation Type
+    required: true
+    defaultValue: uppercase
+    options:
+      items:
+        - uppercase
+        - lowercase
+        - titlecase
+
+  - type: button
+    id: transformButton
+    label: Transform
+
+  - type: display
+    id: result
+    label: Result

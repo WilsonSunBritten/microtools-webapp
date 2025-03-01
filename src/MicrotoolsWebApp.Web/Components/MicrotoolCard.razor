@@ -1,0 +1,47 @@
+@using MicrotoolsWebApp.Core.Models
+
+<div class="card microtool-card" @onclick="OnClick">
+    <div class="card-body">
+        <h5 class="card-title">@Metadata.Name</h5>
+        <p class="card-text">@Metadata.Description</p>
+        @if (Metadata.Tags != null && Metadata.Tags.Any())
+        {
+            <div class="tags">
+                @foreach (var tag in Metadata.Tags)
+                {
+                    <span class="badge bg-secondary me-1">@tag</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .microtool-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+
+    .microtool-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .tags {
+        margin-top: 10px;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public MicrotoolMetadata Metadata { get; set; }
+
+    [Parameter]
+    public EventCallback<MicrotoolMetadata> OnCardClick { get; set; }
+
+    private async Task OnClick()
+    {
+        await OnCardClick.InvokeAsync(Metadata);
+    }
+}

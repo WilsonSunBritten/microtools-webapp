@@ -1,0 +1,99 @@
+@using MicrotoolsWebApp.Core.Models
+
+<div class="dynamic-ui-component">
+    @if (Component != null)
+    {
+        @switch (Component.Type?.ToLower())
+        {
+            case "textinput":
+                <div class="mb-3">
+                    <label for="@Component.Id" class="form-label">@Component.Label</label>
+                    <input type="text" class="form-control" id="@Component.Id" placeholder="@Component.Placeholder"
+                           value="@GetValue(Component.Id)" @onchange="@(e => OnValueChanged(Component.Id, e.Value))" />
+                </div>
+                break;
+
+            case "textarea":
+                <div class="mb-3">
+                    <label for="@Component.Id" class="form-label">@Component.Label</label>
+                    <textarea class="form-control" id="@Component.Id" placeholder="@Component.Placeholder" rows="3"
+                              value="@GetValue(Component.Id)" @onchange="@(e => OnValueChanged(Component.Id, e.Value))"></textarea>
+                </div>
+                break;
+
+            case "number":
+                <div class="mb-3">
+                    <label for="@Component.Id" class="form-label">@Component.Label</label>
+                    <input type="number" class="form-control" id="@Component.Id" placeholder="@Component.Placeholder"
+                           value="@GetValue(Component.Id)" @onchange="@(e => OnValueChanged(Component.Id, e.Value))" />
+                </div>
+                break;
+
+            case "checkbox":
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="@Component.Id"
+                           checked="@(GetValue(Component.Id)?.ToString() == "True")" @onchange="@(e => OnValueChanged(Component.Id, e.Value))" />
+                    <label class="form-check-label" for="@Component.Id">@Component.Label</label>
+                </div>
+                break;
+
+            case "select":
+                <div class="mb-3">
+                    <label for="@Component.Id" class="form-label">@Component.Label</label>
+                    <select class="form-select" id="@Component.Id" value="@GetValue(Component.Id)" @onchange="@(e => OnValueChanged(Component.Id, e.Value))">
+                        @if (Component.Options != null && Component.Options.ContainsKey("items") && Component.Options["items"] is List<object> items)
+                        {
+                            @foreach (var item in items)
+                            {
+                                <option value="@item">@item</option>
+                            }
+                        }
+                    </select>
+                </div>
+                break;
+
+            case "button":
+                <button type="button" class="btn btn-primary" id="@Component.Id" @onclick="@(() => OnButtonClick.InvokeAsync(Component.Id))">
+                    @Component.Label
+                </button>
+                break;
+
+            case "display":
+                <div class="mb-3">
+                    <label class="form-label">@Component.Label</label>
+                    <div class="form-control" readonly>@GetValue(Component.Id)</div>
+                </div>
+                break;
+
+            default:
+                <div class="alert alert-warning">
+                    Unknown component type: @Component.Type
+                </div>
+                break;
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public UiComponent Component { get; set; }
+
+    [Parameter]
+    public Dictionary<string, object> Values { get; set; } = new Dictionary<string, object>();
+
+    [Parameter]
+    public EventCallback<(string Id, object Value)> OnValueChange { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnButtonClick { get; set; }
+
+    private object GetValue(string id)
+    {
+        return Values.TryGetValue(id, out var value) ? value : Component?.DefaultValue;
+    }
+
+    private async Task OnValueChanged(string id, object value)
+    {
+        await OnValueChange.InvokeAsync((id, value));
+    }
+}

@@ -1,0 +1,72 @@
+@page "/index"
+@using MicrotoolsWebApp.Core.Models
+@using MicrotoolsWebApp.Web.Services
+@using MicrotoolsWebApp.Web.Components
+@inject MicrotoolsService MicrotoolsService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Microtools</PageTitle>
+
+<div class="container mt-4">
+    <h1>Microtools</h1>
+    <p class="lead">Select a microtool to get started</p>
+
+    @if (loading)
+    {
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (error != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Error:</strong> @error
+        </div>
+    }
+    else if (microtools == null || !microtools.Any())
+    {
+        <div class="alert alert-info">
+            No microtools found. Add some microtools to get started.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var microtool in microtools)
+            {
+                <div class="col">
+                    <MicrotoolCard Metadata="microtool" OnCardClick="NavigateToMicrotool" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private IEnumerable<MicrotoolMetadata> microtools;
+    private bool loading = true;
+    private string error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            microtools = await MicrotoolsService.GetMicrotoolsAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void NavigateToMicrotool(MicrotoolMetadata microtool)
+    {
+        NavigationManager.NavigateTo($"/microtools/{microtool.Id}");
+    }
+}

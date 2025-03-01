@@ -1,0 +1,71 @@
+@using MicrotoolsWebApp.Core.Models
+@using MicrotoolsWebApp.Web.Services
+
+<div class="dynamic-ui-form">
+    @if (UiSchema != null && UiSchema.Components != null)
+    {
+        <div class="components">
+            @foreach (var component in UiSchema.Components)
+            {
+                <DynamicUiComponent Component="component" Values="Values" OnValueChange="HandleValueChange" OnButtonClick="HandleButtonClick" />
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No UI schema defined for this microtool.
+        </div>
+    }
+
+    @if (Result != null)
+    {
+        <div class="result mt-4">
+            <h4>Result</h4>
+            <pre class="bg-light p-3 rounded">@ResultJson</pre>
+        </div>
+    }
+
+    @if (Error != null)
+    {
+        <div class="alert alert-danger mt-3">
+            <strong>Error:</strong> @Error
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public UiSchema UiSchema { get; set; }
+
+    [Parameter]
+    public string MicrotoolId { get; set; }
+
+    [Inject]
+    private MicrotoolsService MicrotoolsService { get; set; }
+
+    private Dictionary<string, object> Values { get; set; } = new Dictionary<string, object>();
+    private object Result { get; set; }
+    private string Error { get; set; }
+
+    private string ResultJson => Result != null ? System.Text.Json.JsonSerializer.Serialize(Result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }) : null;
+
+    private void HandleValueChange((string Id, object Value) change)
+    {
+        Values[change.Id] = change.Value;
+        StateHasChanged();
+    }
+
+    private async Task HandleButtonClick(string buttonId)
+    {
+        try
+        {
+            Error = null;
+            Result = await MicrotoolsService.ExecuteMicrotoolAsync(MicrotoolId, Values);
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+}

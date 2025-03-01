@@ -1,0 +1,9 @@
+id: text-transformer
+name: Text Transformer
+description: A simple tool to transform text to different cases (uppercase, lowercase, title case)
+version: 1.0.0
+author: Cline
+tags:
+  - text
+  - utility
+  - transformation

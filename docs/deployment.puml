@@ -1,0 +1,55 @@
+@startuml Deployment Diagram
+!theme azure
+skinparam backgroundColor #FFFFFF
+
+title Microtools Webapp - Deployment Architecture
+
+node "Developer Workstation" as DevWS {
+  [Source Code] as SrcCode
+  [Git Repository] as GitRepo
+  
+  SrcCode --> GitRepo : Commit & Push
+}
+
+cloud "GitHub" {
+  [GitHub Repository] as GHRepo
+  [GitHub Actions] as GHActions
+  
+  GHRepo --> GHActions : Trigger CI/CD
+}
+
+cloud "Azure" {
+  node "Azure Static Web App" as SWA {
+    [Blazor WebAssembly] as Blazor
+    [Static Content] as Static
+  }
+  
+  node "Azure Functions" as Functions {
+    [API Endpoints] as API
+    [Microtool Registry] as Registry
+    [Microtool Loader] as Loader
+  }
+  
+  database "Azure Storage" as Storage {
+    [Microtools] as MTools
+  }
+  
+  node "Azure AD B2C" as AAD {
+    [Authentication] as Auth
+    [Authorization] as Authz
+  }
+  
+  Blazor --> API : API Calls
+  API --> Registry : Uses
+  Registry --> Loader : Uses
+  Loader --> MTools : Loads
+  AAD --> SWA : Secures
+  AAD --> Functions : Secures
+}
+
+GitRepo --> GHRepo : Push to development branch
+GHActions --> SWA : Deploy frontend
+GHActions --> Functions : Deploy backend
+GHActions --> Storage : Deploy microtools
+
+@enduml

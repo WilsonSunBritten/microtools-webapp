@@ -1,0 +1,65 @@
+@startuml Sequence Diagram
+!theme azure
+skinparam backgroundColor #FFFFFF
+
+title Microtools Webapp - Execution Sequence
+
+actor User
+participant "Blazor WebAssembly" as Blazor
+participant "MicrotoolsService" as Service
+participant "Azure Functions" as Functions
+participant "MicrotoolRegistry" as Registry
+participant "MicrotoolLoader" as Loader
+participant "Microtool" as Tool
+
+== Initialization ==
+
+Functions -> Registry : DiscoverMicrotools()
+Registry -> Registry : Scan microtools directory
+Registry -> Registry : Load metadata.yaml and ui-schema.yaml
+
+== Home Page Navigation ==
+
+User -> Blazor : Navigate to home page
+Blazor -> Service : GetMicrotoolsAsync()
+Service -> Functions : GET /api/microtools
+Functions -> Registry : GetAllMicrotools()
+Registry --> Functions : Return microtool metadata
+Functions --> Service : Return JSON response
+Service --> Blazor : Return microtool metadata
+Blazor --> User : Display microtool cards
+
+== Microtool Selection ==
+
+User -> Blazor : Click on microtool card
+Blazor -> Service : GetMicrotoolAsync(id)
+Service -> Functions : GET /api/microtools/{id}
+Functions -> Registry : GetMicrotoolById(id)
+Registry --> Functions : Return microtool details
+Functions --> Service : Return JSON response
+Service --> Blazor : Return microtool details
+Blazor --> User : Display microtool UI
+
+== Microtool Execution ==
+
+User -> Blazor : Enter parameters and click execute
+Blazor -> Service : ExecuteMicrotoolAsync(id, parameters)
+Service -> Functions : POST /api/microtools/{id}/execute
+Functions -> Registry : GetMicrotoolById(id)
+Registry --> Functions : Return microtool info
+
+alt Microtool not loaded
+    Functions -> Loader : LoadMicrotoolFromDirectory(directory, id)
+    Loader -> Tool : Load DLL and create instance
+    Tool --> Loader : Return IMicrotool instance
+    Loader --> Functions : Return IMicrotool instance
+    Functions -> Registry : Store instance in registry
+end
+
+Functions -> Tool : ExecuteAsync(parameters)
+Tool --> Functions : Return result
+Functions --> Service : Return JSON response
+Service --> Blazor : Return result
+Blazor --> User : Display result
+
+@enduml

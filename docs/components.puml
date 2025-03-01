@@ -1,0 +1,53 @@
+@startuml Component Diagram
+!theme azure
+skinparam backgroundColor #FFFFFF
+
+title Microtools Webapp - Component Diagram
+
+package "Frontend (Blazor WebAssembly)" {
+  [App] as App
+  [MicrotoolsService] as MService
+  [MicrotoolCard] as MCard
+  [DynamicUiComponent] as DUiComp
+  [DynamicUiForm] as DUiForm
+  
+  App --> MService : Uses
+  App --> MCard : Displays
+  App --> DUiForm : Renders
+  DUiForm --> DUiComp : Contains
+}
+
+package "Backend (Azure Functions)" {
+  [MicrotoolsApi] as MApi
+  [MicrotoolRegistry] as MRegistry
+  [MicrotoolLoader] as MLoader
+  
+  MApi --> MRegistry : Uses
+  MApi --> MLoader : Uses
+}
+
+package "Core" {
+  interface "IMicrotool" as IMicrotool
+  [MicrotoolMetadata] as MMetadata
+  [UiSchema] as UiSchema
+  
+  MRegistry --> MMetadata : Manages
+  MRegistry --> UiSchema : Manages
+  MLoader --> IMicrotool : Loads
+}
+
+package "Microtools" {
+  [TextTransformer] as TT
+  [OtherMicrotools] as OM
+  
+  TT ..|> IMicrotool : Implements
+  OM ..|> IMicrotool : Implements
+}
+
+MService --> MApi : HTTP Calls
+MRegistry --> TT : Discovers
+MRegistry --> OM : Discovers
+MLoader --> TT : Loads
+MLoader --> OM : Loads
+
+@enduml

@@ -1,0 +1,92 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+    
+    - name: Publish Functions
+      if: github.event_name == 'push'
+      run: dotnet publish src/MicrotoolsWebApp.Functions -c Release -o functions-publish
+    
+    - name: Publish Web
+      if: github.event_name == 'push'
+      run: dotnet publish src/MicrotoolsWebApp.Web -c Release -o web-publish
+    
+    - name: Upload Functions Artifact
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: functions
+        path: functions-publish
+    
+    - name: Upload Web Artifact
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: web
+        path: web-publish
+
+  deploy:
+    needs: build_and_test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download Functions Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: functions
+        path: functions-publish
+    
+    - name: Download Web Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: web
+        path: web-publish
+    
+    - name: Setup Azure CLI
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy Functions to Azure
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: microtools-api
+        package: functions-publish
+    
+    - name: Deploy Static Web App
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.STATIC_WEB_APP_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: "upload"
+        app_location: "web-publish/wwwroot"
+        skip_app_build: true
